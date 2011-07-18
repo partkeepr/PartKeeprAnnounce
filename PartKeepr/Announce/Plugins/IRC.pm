@@ -4,7 +4,7 @@ package PartKeepr::Announce::Plugins::IRC;
 use strict;
 use warnings;
 use AnyEvent;
-use AnyEvent::IRC qw/split_prefix prefix_nick/;
+use AnyEvent::IRC::Util qw/split_prefix prefix_nick/;
 use AnyEvent::IRC::Client;
 use Data::Dumper;
 use Sys::Syslog;
