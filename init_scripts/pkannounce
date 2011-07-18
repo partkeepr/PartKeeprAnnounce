@@ -1,0 +1,82 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          pkannounce
+# Required-Start:    $networking $syslog $remote_fs
+# Required-Stop:     $networking $syslog $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Run pkannounce
+# Description:       Announce script for PartKeepr to announce changes to several
+#                    services such as IRC, XMPP and Twitter.
+### END INIT INFO
+
+# Author: Sebastian Muszytowski <sebastian@muszytowski.net>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="Announce Bot for PartKeepr"
+NAME="pkannounce"
+DAEMON_BASE="/usr/local/pkannounce"
+DAEMON=$DAEMON_BASE/pkannounce.pl
+DAEMON_ARGS=""
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+USER="pdb"
+GROUP="pdb"
+
+do_start()
+{
+    # Return
+    #   0 if daemon has been started
+    #   1 if daemon was already running
+    #   2 if daemon could not be started
+    pgrep -f 'pkannounce' > /dev/null && return 1
+    start-stop-daemon --background --chdir $DAEMON_BASE --chuid $USER:$GROUP --start --quiet --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- \
+        $DAEMON_ARGS \
+        || return 2
+    return 0
+}
+
+do_stop()
+{
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE
+    RETURNVALUE="$?"
+    rm -f $PIDFILE
+    return "$RETURNVALUE"
+}
+
+case "$1" in
+  start)
+    echo "Starting $DESC $NAME"
+    do_start
+    ;;
+  stop)
+    echo "Stopping $DESC $NAME"
+    do_stop
+    ;;
+  force-stop)
+    pkill -f 'pkannounce'
+    ;;
+  restart|force-reload)
+    echo "Restarting $DESC $NAME"
+    do_stop
+    case "$?" in
+      0|1)
+        do_start
+        ;;
+      *)
+        echo "Restarting failed"
+        ;;
+    esac
+    ;;
+  *)
+    echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload|force-stop}" >&2
+    exit 3
+    ;;
+esac
+
