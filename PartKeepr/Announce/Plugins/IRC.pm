@@ -7,6 +7,7 @@ use AnyEvent;
 use AnyEvent::IRC::Util qw/split_prefix prefix_nick/;
 use AnyEvent::IRC::Client;
 use Data::Dumper;
+use PartKeepr::Announce::Messagehandler;
 use Sys::Syslog;
 
 sub new{
@@ -97,12 +98,15 @@ sub register_callbacks {
         },
         publicmsg => sub {
             my ($instance,$mychannel,$ircmsg) = @_;
-            print Dumper $self;
+            my $from = $mychannel;
+            my $msg = $ircmsg->{params}[1];
+            $self->messagehandler($from,$msg);
         },
         privatemsg => sub {
             my ($instance,$mynick,$ircmsg) = @_;
-            my $foo = prefix_nick($ircmsg->{prefix});
-            print Dumper $foo;
+            my $from = prefix_nick($ircmsg->{prefix});
+            my $msg = $ircmsg->{params}[1];
+            $self->messagehandler($from,$msg);
         }
     );
     $self->{instance}->ctcp_auto_reply ('VERSION', ['VERSION', 'PartKeepr::Announce::Plugins::IRC by Sebastian Muszytowski']);
@@ -114,6 +118,12 @@ sub sendcmd {
     if ($self->{config}->{sendcmd} eq "true") {
         $self->{instance}->send_srv(PRIVMSG => $self->{config}->{sendcmd_to}, $self->{config}->{sendcmd_cmd});
     }
+}
+
+sub messagehandler {
+    my ($self,$from,$message) = @_;
+    print Dumper $from;
+    print Dumper $message;
 }
 
 1;
